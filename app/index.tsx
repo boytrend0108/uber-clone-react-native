@@ -1,13 +1,28 @@
+import { useAuth } from '@clerk/clerk-expo';
+import { Redirect } from 'expo-router';
 import React from 'react';
-import { Text } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { ActivityIndicator, View } from 'react-native';
+import 'react-native-get-random-values';
 
 const Home = () => {
-  return (
-    <SafeAreaView>
-      <Text>Home</Text>
-    </SafeAreaView>
-  );
+  const { isSignedIn, isLoaded } = useAuth();
+
+  console.log('Auth state:', { isSignedIn, isLoaded });
+
+  // Wait for Clerk to load before checking authentication state
+  if (!isLoaded) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
+  }
+
+  if (isSignedIn) {
+    return <Redirect href={'/(root)/(tabs)/home'} />;
+  }
+
+  return <Redirect href="/(auth)/onboarding" />;
 };
 
 export default Home;
