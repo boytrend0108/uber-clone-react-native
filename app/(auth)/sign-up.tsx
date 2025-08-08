@@ -2,6 +2,7 @@ import { icons, images } from '@/assets/constants';
 import CustomButton from '@/components/custom-button';
 import InputField from '@/components/input-field';
 import Oauth from '@/components/oauth';
+import { fetchAPI } from '@/lib/fetch';
 import { useSignUp } from '@clerk/clerk-expo';
 import { Link, useRouter } from 'expo-router';
 import React, { useState } from 'react';
@@ -52,7 +53,17 @@ const SignUp = () => {
       });
 
       if (signUpAttempt.status === 'complete') {
+        await fetchAPI('/(api)/user', {
+          method: 'POST',
+          body: JSON.stringify({
+            name: form.name,
+            email: form.email,
+            clerkId: signUpAttempt.createdUserId,
+          }),
+        });
+
         await setActive({ session: signUpAttempt.createdSessionId });
+
         setVerificationStatus('verified');
       } else {
         console.error(JSON.stringify(signUpAttempt, null, 2));
