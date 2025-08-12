@@ -1,39 +1,26 @@
-import * as Location from 'expo-location';
-import React, { useEffect, useState } from 'react';
-import MapView, { PROVIDER_DEFAULT } from 'react-native-maps';
+import { calculateRegion } from '@/lib/map';
+import { useLocationStore } from '@/store';
+import React from 'react';
+import MapView, { PROVIDER_GOOGLE } from 'react-native-maps';
 
 const Map = () => {
-  const [location, setLocation] = useState<Location.LocationObject | null>(
-    null
-  );
+  const {
+    userLatitude,
+    userLongitude,
+    destinationLatitude,
+    destinationLongitude,
+  } = useLocationStore();
 
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
-
-  useEffect(() => {
-    async function getCurrentLocation() {
-      let { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        setErrorMsg('Permission to access location was denied');
-        return;
-      }
-
-      let location = await Location.getCurrentPositionAsync({});
-      setLocation(location);
-    }
-
-    getCurrentLocation();
-  }, []);
-  console.log('expo-location:', location);
-  const region = {
-    latitude: 37.78825,
-    longitude: -122.4324,
-    latitudeDelta: 0.01,
-    longitudeDelta: 0.01,
-  };
+  const region = calculateRegion({
+    userLatitude,
+    userLongitude,
+    destinationLatitude,
+    destinationLongitude,
+  });
 
   return (
     <MapView
-      provider={PROVIDER_DEFAULT}
+      provider={PROVIDER_GOOGLE}
       style={{ width: '100%', height: '100%', borderRadius: '40px' }}
       initialRegion={region}
       tintColor="black"

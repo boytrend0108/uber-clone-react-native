@@ -2,9 +2,11 @@ import { icons, images } from '@/assets/constants';
 import GoogleTextInput from '@/components/google-text-input';
 import Map from '@/components/map';
 import RideCart from '@/components/ride-cart';
+import { useLocationStore } from '@/store';
 import { useUser } from '@clerk/clerk-expo';
 import { useFocusEffect } from '@react-navigation/native';
-import React, { useCallback, useState } from 'react';
+import * as Location from 'expo-location';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -20,12 +22,12 @@ const recentRides = [
     ride_id: '1',
     origin_address: 'Kathmandu, Nepal',
     destination_address: 'Pokhara, Nepal',
-    origin_latitude: '27.717245',
-    origin_longitude: '85.323961',
-    destination_latitude: '28.209583',
-    destination_longitude: '83.985567',
+    origin_latitude: 27.717245,
+    origin_longitude: 85.323961,
+    destination_latitude: 28.209583,
+    destination_longitude: 83.985567,
     ride_time: 391,
-    fare_price: '19500.00',
+    fare_price: 19500.0,
     payment_status: 'paid',
     driver_id: 2,
     user_id: '1',
@@ -126,10 +128,40 @@ const Home = () => {
   const loading = false; // Simulating loading state
   const { user } = useUser();
   const [isScreenFocused, setIsScreenFocused] = useState(true);
+  const { setUserLocation } = useLocationStore();
+
+  const [hasPermissions, setHasPermissions] = useState(false);
+
+  useEffect(() => {
+    const requestLocation = async () => {
+      let { status } = await Location.requestForegroundPermissionsAsync();
+
+      if (status === 'granted') {
+        setHasPermissions(true);
+
+        let location = await Location.getCurrentPositionAsync();
+        const address = await Location.reverseGeocodeAsync({
+          latitude: location.coords.latitude,
+          longitude: location.coords.longitude,
+        });
+
+        setUserLocation({
+          latitude: location.coords.latitude,
+          longitude: location.coords.longitude,
+          address: `${address[0].name}, ${address[0].region}`,
+        });
+      } else {
+        setHasPermissions(false);
+      }
+    };
+
+    requestLocation();
+  }, []);
 
   useFocusEffect(
     useCallback(() => {
       setIsScreenFocused(true);
+
       return () => {
         setIsScreenFocused(false);
       };
@@ -165,7 +197,7 @@ const Home = () => {
             <View className="flex flex-row items-center  justify-between my-5">
               <View>
                 <Text className="text-xl font-JakartaExtraBold text-gray-800">
-                  Wellcomee{', '}
+                  Wellcome{', '}
                   {user?.firstName ||
                     user?.emailAddresses[0]?.emailAddress.split('@')[0] ||
                     'Guest'}{' '}
