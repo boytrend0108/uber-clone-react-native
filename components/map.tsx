@@ -1,7 +1,10 @@
-import { calculateRegion } from '@/lib/map';
-import { useLocationStore } from '@/store';
-import React from 'react';
-import MapView, { PROVIDER_GOOGLE } from 'react-native-maps';
+import { icons } from '@/assets/constants';
+import { mockDrivers } from '@/assets/mocks/drivers';
+import { calculateRegion, generateMarkersFromData } from '@/lib/map';
+import { useDriverStore, useLocationStore } from '@/store';
+import { MarkerData } from '@/types/type';
+import React, { useEffect, useState } from 'react';
+import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 
 const Map = () => {
   const {
@@ -10,6 +13,23 @@ const Map = () => {
     destinationLatitude,
     destinationLongitude,
   } = useLocationStore();
+
+  const { selectedDriver, setSelectedDriver } = useDriverStore();
+  const [markers, setMarkers] = useState<MarkerData[]>([]);
+
+  useEffect(() => {
+    if (Array.isArray(mockDrivers)) {
+      if (!userLatitude || !userLongitude) return;
+
+      const newMarkers = generateMarkersFromData({
+        data: mockDrivers,
+        userLatitude,
+        userLongitude,
+      });
+
+      setMarkers(newMarkers);
+    }
+  }, []);
 
   const region = calculateRegion({
     userLatitude,
@@ -27,7 +47,21 @@ const Map = () => {
       showsPointsOfInterest={false}
       showsUserLocation={true}
       userInterfaceStyle="light"
-    />
+    >
+      {markers.map((marker) => (
+        <Marker
+          key={marker.id}
+          coordinate={{
+            latitude: marker.latitude,
+            longitude: marker.longitude,
+          }}
+          title={marker.title}
+          image={
+            selectedDriver === marker.id ? icons.selectedMarker : icons.marker
+          }
+        />
+      ))}
+    </MapView>
   );
 };
 
