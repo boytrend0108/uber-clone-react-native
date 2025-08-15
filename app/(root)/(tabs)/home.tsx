@@ -6,6 +6,7 @@ import { useLocationStore } from '@/store';
 import { useUser } from '@clerk/clerk-expo';
 import { useFocusEffect } from '@react-navigation/native';
 import * as Location from 'expo-location';
+import { router } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -128,7 +129,7 @@ const Home = () => {
   const loading = false; // Simulating loading state
   const { user } = useUser();
   const [isScreenFocused, setIsScreenFocused] = useState(true);
-  const { setUserLocation } = useLocationStore();
+  const { setUserLocation, setDestinationLocation } = useLocationStore();
 
   const [hasPermissions, setHasPermissions] = useState(false);
 
@@ -169,7 +170,14 @@ const Home = () => {
   );
 
   const handleSignOut = () => {};
-  const handleDestinationPress = () => {};
+  const handleDestinationPress = (location: {
+    longitude: number;
+    latitude: number;
+    address: string;
+  }) => {
+    setDestinationLocation(location);
+    router.push('/(root)/find-ride');
+  };
 
   return (
     <SafeAreaView className="bg-general-500">
