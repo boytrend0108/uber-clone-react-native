@@ -140,7 +140,10 @@ const Home = () => {
       if (status === 'granted') {
         setHasPermissions(true);
 
-        let location = await Location.getCurrentPositionAsync();
+        let location = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.BestForNavigation,
+        });
+
         const address = await Location.reverseGeocodeAsync({
           latitude: location.coords.latitude,
           longitude: location.coords.longitude,

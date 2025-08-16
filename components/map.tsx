@@ -46,6 +46,7 @@ const Map = () => {
       tintColor="black"
       showsPointsOfInterest={false}
       showsUserLocation={true}
+      followsUserLocation={true}
       userInterfaceStyle="light"
     >
       {markers.map((marker) => (

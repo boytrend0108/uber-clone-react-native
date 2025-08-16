@@ -5,9 +5,6 @@ import { icons } from '@/assets/constants';
 import { GoogleInputProps } from '@/types/type';
 
 const googlePlacesApiKey = process.env.EXPO_PUBLIC_GOOGLE_API_KEY;
-console.log('🔑 Google Places API Key:', googlePlacesApiKey);
-console.log('🔑 API Key length:', googlePlacesApiKey?.length);
-console.log('🔑 API Key valid format:', googlePlacesApiKey?.startsWith('AIza'));
 
 const GoogleTextInput = ({
   icon,
@@ -23,30 +20,32 @@ const GoogleTextInput = ({
       className={`flex flex-row items-center justify-center relative z-50 rounded-xl ${containerStyle}`}
     >
       <GooglePlacesAutocomplete
-        predefinedPlaces={[
-          {
-            description: 'Times Square, New York, NY, USA',
-            geometry: {
-              location: {
-                lat: 40.758,
-                lng: -73.9855,
-                latitude: 40.758,
-                longitude: -73.9855,
-              },
-            },
-          },
-          {
-            description: 'Central Park, New York, NY, USA',
-            geometry: {
-              location: {
-                lat: 40.7829,
-                lng: -73.9654,
-                latitude: 40.7829,
-                longitude: -73.9654,
-              },
-            },
-          },
-        ]}
+        predefinedPlaces={
+          [
+            // {
+            //   description: 'Times Square, New York, NY, USA',
+            //   geometry: {
+            //     location: {
+            //       lat: 40.758,
+            //       lng: -73.9855,
+            //       latitude: 40.758,
+            //       longitude: -73.9855,
+            //     },
+            //   },
+            // },
+            // {
+            //   description: 'Central Park, New York, NY, USA',
+            //   geometry: {
+            //     location: {
+            //       lat: 40.7829,
+            //       lng: -73.9654,
+            //       latitude: 40.7829,
+            //       longitude: -73.9654,
+            //     },
+            //   },
+            // },
+          ]
+        }
         predefinedPlacesAlwaysVisible={true}
         fetchDetails={true}
         placeholder="Search"
