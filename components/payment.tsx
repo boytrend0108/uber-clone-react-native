@@ -1,9 +1,12 @@
+import { images } from '@/assets/constants';
 import { fetchAPI } from '@/lib/fetch';
 import { PaymentProps } from '@/types/type';
 import { useStripe } from '@stripe/stripe-react-native';
 import * as Linking from 'expo-linking';
+import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { Alert } from 'react-native';
+import { Alert, Image, Text, View } from 'react-native';
+import ReactNativeModal from 'react-native-modal';
 import { Screen } from 'react-native-screens';
 import CustomButton from './custom-button';
 
@@ -16,6 +19,7 @@ const Payment = ({
 }: PaymentProps) => {
   const { initPaymentSheet, presentPaymentSheet } = useStripe();
   const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState<boolean>(false);
 
   const fetchPaymentSheetParams = async ({
     amount,
@@ -83,10 +87,6 @@ const Payment = ({
           name: cleanName,
         });
 
-      console.log('paymentIntent:', paymentIntent);
-      console.log('ephemeralKey:', ephemeralKey);
-      console.log('customer:', customer);
-
       const { error } = await initPaymentSheet({
         merchantDisplayName: 'Example, Inc.',
         customerId: customer,
@@ -106,11 +106,10 @@ const Payment = ({
       });
 
       if (!error) {
-        console.log('error', error);
         setLoading(true);
       }
     } catch (error) {
-      console.log(error);
+      console.log('fetchPaymentSheetParams or initpayment error', error);
     }
   };
 
@@ -121,7 +120,8 @@ const Payment = ({
     if (error) {
       Alert.alert(`Error code: ${error.code}`, error.message);
     } else {
-      Alert.alert('Success', 'Your order is confirmed!');
+      // Alert.alert('Success', 'Your order is confirmed!');
+      setSuccess(true);
     }
   };
 
@@ -133,9 +133,36 @@ const Payment = ({
     <Screen>
       <CustomButton
         disabled={!loading}
-        title="Checkout=="
+        title="Checkout"
         onPress={() => openPaymentSheet()}
       />
+
+      <ReactNativeModal
+        isVisible={success}
+        onBackdropPress={() => setSuccess(false)}
+      >
+        <View className="flex flex-col items-center justify-center bg-white p-7 rounded-2xl">
+          <Image source={images.check} className="w-28 h-28 mt-5" />
+
+          <Text className="text-2xl text-center font-JakartaBold mt-5">
+            Booking placed successfully
+          </Text>
+
+          <Text className="text-md text-general-200 font-JakartaRegular text-center mt-3">
+            Thank you for your booking. Your reservation has been successfully
+            placed. Please proceed with your trip.
+          </Text>
+
+          <CustomButton
+            title="Back Home"
+            onPress={() => {
+              setSuccess(false);
+              router.push('/(root)/(tabs)/home');
+            }}
+            className="mt-5"
+          />
+        </View>
+      </ReactNativeModal>
     </Screen>
   );
 };
