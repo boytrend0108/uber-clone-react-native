@@ -149,19 +149,10 @@ const GoogleTextInput = ({
           returnKeyType: 'search',
           autoCapitalize: 'none',
           autoCorrect: false,
-          onChangeText: (text) => {
-            console.log('⌨️ Typing:', text);
-            console.log('📝 Text length:', text.length);
-            console.log('🔄 Should trigger API call for:', text);
-            if (text.length >= 2) {
-              console.log('✅ Text is long enough for API call');
-            } else {
-              console.log('❌ Text too short for API call');
-            }
-          },
-          onFocus: () => console.log('🎯 Input focused'),
-          onBlur: () => console.log('🎯 Input blurred'),
-          onSubmitEditing: () => console.log('⏎ Submit pressed'),
+          onChangeText: () => {},
+          onFocus: () => {},
+          onBlur: () => {},
+          onSubmitEditing: () => {},
         }}
       />
     </View>

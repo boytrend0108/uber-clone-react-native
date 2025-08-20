@@ -14,7 +14,6 @@ let StripeProvider: any = null;
 try {
   const stripe = require('@stripe/stripe-react-native');
   StripeProvider = stripe.StripeProvider;
-  console.log('Stripe successfully imported in this build+++++++');
 } catch (error) {
   console.log('Stripe not available in this build:', error);
 }
@@ -99,11 +98,16 @@ const BookRide = () => {
         </View>
 
         <Payment
-          fullName={user?.fullName!}
-          email={user?.emailAddresses[0].emailAddress!}
-          amount={driverDetails?.price!}
-          driverId={driverDetails?.id}
-          rideTime={driverDetails?.time!}
+          fullName={
+            user?.fullName ||
+            (user?.firstName && user?.lastName
+              ? `${user.firstName} ${user.lastName}`
+              : user?.firstName || user?.lastName || 'Unknown User')
+          }
+          email={user?.emailAddresses[0]?.emailAddress || ''}
+          amount={driverDetails?.price || '0'}
+          driverId={driverDetails?.id || 0}
+          rideTime={driverDetails?.time || 0}
         />
       </>
     </RideLayout>

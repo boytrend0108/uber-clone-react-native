@@ -1,6 +1,10 @@
 import { icons } from '@/assets/constants';
 import { mockDrivers } from '@/assets/mocks/drivers';
-import { calculateRegion, generateMarkersFromData } from '@/lib/map';
+import {
+  calculateDriverTimes,
+  calculateRegion,
+  generateMarkersFromData,
+} from '@/lib/map';
 import { useDriverStore, useLocationStore } from '@/store';
 import { MarkerData } from '@/types/type';
 import React, { useEffect, useState } from 'react';
@@ -18,8 +22,7 @@ const Map = () => {
   const [markers, setMarkers] = useState<MarkerData[]>([]);
 
   useEffect(() => {
-    setDrivers(mockDrivers);
-    if (Array.isArray(mockDrivers)) {
+    const initializeDrivers = async () => {
       if (!userLatitude || !userLongitude) return;
 
       const newMarkers = generateMarkersFromData({
@@ -28,9 +31,32 @@ const Map = () => {
         userLongitude,
       });
 
-      setMarkers(newMarkers);
-    }
-  }, []);
+      // If we have destination coordinates, calculate times and prices
+      if (destinationLatitude && destinationLongitude) {
+        console.log('Calculating driver times and prices...');
+        const driversWithTimes = await calculateDriverTimes({
+          markers: newMarkers,
+          userLatitude,
+          userLongitude,
+          destinationLatitude,
+          destinationLongitude,
+        });
+
+        if (driversWithTimes) {
+          setMarkers(driversWithTimes);
+          setDrivers(driversWithTimes);
+        } else {
+          setMarkers(newMarkers);
+          setDrivers(newMarkers);
+        }
+      } else {
+        setMarkers(newMarkers);
+        setDrivers(newMarkers);
+      }
+    };
+
+    initializeDrivers();
+  }, [userLatitude, userLongitude, destinationLatitude, destinationLongitude]);
 
   const region = calculateRegion({
     userLatitude,

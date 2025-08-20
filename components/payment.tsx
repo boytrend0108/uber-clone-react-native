@@ -17,7 +17,15 @@ const Payment = ({
   const { initPaymentSheet, presentPaymentSheet } = useStripe();
   const [loading, setLoading] = useState(false);
 
-  const fetchPaymentSheetParams = async ({ amount }: { amount: string }) => {
+  const fetchPaymentSheetParams = async ({
+    amount,
+    email,
+    name,
+  }: {
+    amount: string;
+    email: string;
+    name: string;
+  }) => {
     const response = await fetchAPI(`/(api)/(stripe)/payment-sheet`, {
       method: 'POST',
       headers: {
@@ -25,10 +33,10 @@ const Payment = ({
       },
       body: JSON.stringify({
         amount,
+        email,
+        name,
       }),
     });
-
-    console.log('response:', response);
 
     const { paymentIntent, ephemeralKey, customer } = response;
 
@@ -41,10 +49,39 @@ const Payment = ({
 
   const initializePaymentSheet = async () => {
     console.log('start initializing payment sheet');
+    console.log('Payment props:', { amount, email, fullName });
+
+    // Clean and validate the fullName
+    const cleanName = fullName?.trim() || 'Guest User';
+    const cleanEmail = email?.trim();
+    const cleanAmount = amount?.toString().trim();
+
+    console.log('Cleaned values:', {
+      amount: cleanAmount,
+      email: cleanEmail,
+      name: cleanName,
+    });
+
+    // Validate props before proceeding
+    if (
+      !cleanAmount ||
+      cleanAmount === '0' ||
+      !cleanEmail ||
+      !cleanName ||
+      cleanName === 'null null' ||
+      cleanName === 'undefined undefined'
+    ) {
+      Alert.alert('Error', 'Missing payment information. Please try again.');
+      return;
+    }
 
     try {
       const { paymentIntent, ephemeralKey, customer } =
-        await fetchPaymentSheetParams({ amount });
+        await fetchPaymentSheetParams({
+          amount: cleanAmount,
+          email: cleanEmail,
+          name: cleanName,
+        });
 
       console.log('paymentIntent:', paymentIntent);
       console.log('ephemeralKey:', ephemeralKey);
