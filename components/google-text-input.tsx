@@ -159,4 +159,4 @@ const GoogleTextInput = ({
   );
 };
 
-export default GoogleTextInput;
+export default React.memo(GoogleTextInput);

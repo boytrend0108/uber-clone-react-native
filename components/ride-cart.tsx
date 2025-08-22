@@ -128,4 +128,4 @@ const RideCart = ({
   );
 };
 
-export default RideCart;
+export default React.memo(RideCart);
