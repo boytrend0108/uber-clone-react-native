@@ -94,28 +94,33 @@ export const calculateDriverTimes = async ({
     return;
 
   try {
+    const userToDestinationResponse = await fetch(
+      `https://maps.googleapis.com/maps/api/directions/json?origin=${userLatitude},${userLongitude}&destination=${destinationLatitude},${destinationLongitude}&key=${directionsAPI}`,
+    );
+    const userToDestinationData = await userToDestinationResponse.json();
+    const userToDestinationTime = userToDestinationData.routes[0]?.legs[0]?.duration?.value || 0;
+
     const timesPromises = markers.map(async (marker) => {
-      const responseToUser = await fetch(
-        `https://maps.googleapis.com/maps/api/directions/json?origin=${marker.latitude},${marker.longitude}&destination=${userLatitude},${userLongitude}&key=${directionsAPI}`,
-      );
-      const dataToUser = await responseToUser.json();
-      const timeToUser = dataToUser.routes[0].legs[0].duration.value; // Time in seconds
+      try {
+        const responseToUser = await fetch(
+          `https://maps.googleapis.com/maps/api/directions/json?origin=${marker.latitude},${marker.longitude}&destination=${userLatitude},${userLongitude}&key=${directionsAPI}`,
+        );
+        const dataToUser = await responseToUser.json();
+        const timeToUser = dataToUser.routes[0]?.legs[0]?.duration?.value || 0;
 
-      const responseToDestination = await fetch(
-        `https://maps.googleapis.com/maps/api/directions/json?origin=${userLatitude},${userLongitude}&destination=${destinationLatitude},${destinationLongitude}&key=${directionsAPI}`,
-      );
-      const dataToDestination = await responseToDestination.json();
-      const timeToDestination =
-        dataToDestination.routes[0].legs[0].duration.value; // Time in seconds
+        const totalTime = (timeToUser + userToDestinationTime) / 60; // Total time in minutes
+        const price = (totalTime * 0.5).toFixed(2); // Calculate price based on time
 
-      const totalTime = (timeToUser + timeToDestination) / 60; // Total time in minutes
-      const price = (totalTime * 0.5).toFixed(2); // Calculate price based on time
-
-      return { ...marker, time: totalTime, price };
+        return { ...marker, time: totalTime, price };
+      } catch (error) {
+        console.error(`Error calculating time for driver ${marker.id}:`, error);
+        return { ...marker, time: 0, price: "0.00" };
+      }
     });
 
     return await Promise.all(timesPromises);
   } catch (error) {
     console.error("Error calculating driver times:", error);
+    return markers.map(marker => ({ ...marker, time: 0, price: "0.00" }));
   }
 };
