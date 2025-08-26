@@ -89,6 +89,17 @@ const Map = () => {
           }
         />
       ))}
+
+      {destinationLatitude && destinationLongitude && (
+        <Marker
+          coordinate={{
+            latitude: destinationLatitude,
+            longitude: destinationLongitude,
+          }}
+          title="Destination"
+          image={icons.pin}
+        />
+      )}
     </MapView>
   );
 };
