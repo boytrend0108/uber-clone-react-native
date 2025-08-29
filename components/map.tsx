@@ -10,6 +10,8 @@ import { MarkerData } from '@/types/type';
 import React, { useEffect, useState } from 'react';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 
+import MapViewDirections from 'react-native-maps-directions';
+
 const Map = () => {
   const {
     userLatitude,
@@ -92,6 +94,7 @@ const Map = () => {
 
       {destinationLatitude && destinationLongitude && (
         <Marker
+          key="destination"
           coordinate={{
             latitude: destinationLatitude,
             longitude: destinationLongitude,
@@ -100,6 +103,17 @@ const Map = () => {
           image={icons.pin}
         />
       )}
+
+      <MapViewDirections
+        origin={{ latitude: userLatitude!, longitude: userLongitude! }}
+        destination={{
+          latitude: destinationLatitude!,
+          longitude: destinationLongitude!,
+        }}
+        apikey={process.env.EXPO_PUBLIC_GOOGLE_PLACE_API_KEY!}
+        strokeColor="blue"
+        strokeWidth={3}
+      />
     </MapView>
   );
 };
