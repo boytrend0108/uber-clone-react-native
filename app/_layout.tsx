@@ -32,8 +32,16 @@ export default function RootLayout() {
     return null;
   }
 
+  const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!;
+
+  if (!publishableKey) {
+    throw new Error(
+      'Missing Publishable Key. Please set EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY in your .env'
+    );
+  }
+
   return (
-    <ClerkProvider tokenCache={tokenCache}>
+    <ClerkProvider tokenCache={tokenCache} publishableKey={publishableKey}>
       <Stack
         screenOptions={{
           animation: 'slide_from_right', // Default slide animation
