@@ -1,15 +1,43 @@
+import { logSessionDebug, validateSessionState } from '@/lib/session';
 import { useAuth } from '@clerk/clerk-expo';
 import { Redirect } from 'expo-router';
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import 'react-native-get-random-values';
 
 const Home = () => {
-  const { isSignedIn, isLoaded } = useAuth();
+  const { isSignedIn, isLoaded, sessionId } = useAuth();
+  const [redirectTarget, setRedirectTarget] = useState<string | null>(null);
 
   useEffect(() => {
-    console.log('Auth state changed:', { isSignedIn, isLoaded });
-  }, [isSignedIn, isLoaded]);
+    logSessionDebug('AUTH_STATE_CHANGE', {
+      isSignedIn,
+      isLoaded,
+      sessionId: sessionId || 'No session',
+    });
+    console.log('Auth state changed:', {
+      isSignedIn,
+      isLoaded,
+      sessionId: sessionId || 'No session',
+    });
+
+    // Only set redirect target when Clerk is fully loaded
+    if (isLoaded) {
+      if (validateSessionState(isLoaded, isSignedIn, sessionId)) {
+        console.log(
+          'User is signed in with session:',
+          sessionId,
+          '...redirecting to home...'
+        );
+        setRedirectTarget('/(root)/(tabs)/home');
+      } else {
+        console.log(
+          'User not signed in or no session, redirecting to onboarding...'
+        );
+        setRedirectTarget('/(auth)/onboarding');
+      }
+    }
+  }, [isSignedIn, isLoaded, sessionId]);
 
   // Wait for Clerk to load before checking authentication state
   if (!isLoaded) {
@@ -21,13 +49,17 @@ const Home = () => {
     );
   }
 
-  if (isSignedIn) {
-    console.log('...............redirecting to home................');
-    return <Redirect href={'/(root)/(tabs)/home'} />;
+  // Only redirect when we have a clear target
+  if (redirectTarget) {
+    return <Redirect href={redirectTarget as any} />;
   }
 
-  console.log('...............redirecting to onboarding................');
-  return <Redirect href="/(auth)/onboarding" />;
+  // Fallback loading state
+  return (
+    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <ActivityIndicator size="large" />
+    </View>
+  );
 };
 
 export default Home;

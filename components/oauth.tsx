@@ -1,6 +1,5 @@
 import { icons } from '@/assets/constants';
-import { useSSO } from '@clerk/clerk-expo';
-import * as AuthSession from 'expo-auth-session';
+import { useOAuth } from '@clerk/clerk-expo';
 import { router } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import React, { useCallback, useEffect } from 'react';
@@ -19,54 +18,69 @@ export const useWarmUpBrowser = () => {
 WebBrowser.maybeCompleteAuthSession();
 
 const OAuth = () => {
-  const { startSSOFlow } = useSSO();
+  const { startOAuthFlow } = useOAuth({ strategy: 'oauth_google' });
 
   useWarmUpBrowser();
 
   const handleGoogleLogin = useCallback(async () => {
     try {
-      const { createdSessionId, setActive, signIn, signUp } =
-        await startSSOFlow({
-          strategy: 'oauth_google',
-          // For web, defaults to current path
-          // For native, you must pass a scheme, like AuthSession.makeRedirectUri({ scheme, path })
-          // For more info, see https://docs.expo.dev/versions/latest/sdk/auth-session/#authsessionmakeredirecturioptions
-          redirectUrl: AuthSession.makeRedirectUri({
-            scheme: 'uber-clone',
-            // path: 'oauth-native-callback',
-          }),
-        });
+      console.log('Starting Google OAuth flow...');
+
+      const { createdSessionId, signIn, signUp, setActive } =
+        await startOAuthFlow();
+
+      console.log('OAuth flow result:', {
+        hasCreatedSessionId: !!createdSessionId,
+        hasSignIn: !!signIn,
+        hasSignUp: !!signUp,
+        signInStatus: signIn?.status,
+        signUpStatus: signUp?.status,
+      });
 
       if (createdSessionId) {
-        await setActive!({
-          session: createdSessionId,
-        });
+        console.log('Got createdSessionId, setting active session...');
+        await setActive!({ session: createdSessionId });
 
-        // Navigate to root to trigger auth state re-evaluation
-        router.replace('/(root)/(tabs)/home');
-      } else {
-        // If there is no `createdSessionId`,
-        // there are missing requirements, such as MFA
-        // Use the `signIn` or `signUp` returned from `startSSOFlow`
-        // to handle next stepss
-        console.log('No createdSessionId - checking signIn/signUp objects');
+        // Add a small delay to ensure session is properly set
+        setTimeout(() => {
+          router.replace('/(root)/(tabs)/home');
+        }, 100);
+        return;
+      }
 
-        if (signIn) {
-          console.log('SignIn status:', signIn.status);
-          console.log('SignIn first factor:', signIn.firstFactorVerification);
-        }
+      // Handle sign-in completion
+      if (signIn && signIn.status === 'complete') {
+        console.log('SignIn is complete, setting session...');
+        if (signIn.createdSessionId) {
+          await setActive!({ session: signIn.createdSessionId });
 
-        if (signUp) {
-          console.log('SignUp status:', signUp.status);
-          console.log('SignUp verifications:', signUp.verifications);
+          setTimeout(() => {
+            router.replace('/(root)/(tabs)/home');
+          }, 100);
+          return;
         }
       }
-    } catch (err) {
-      // See https://clerk.com/docs/custom-flows/error-handling
-      // for more info on error handling
-      console.error(JSON.stringify(err, null, 2));
+
+      // Handle sign-up completion
+      if (signUp && signUp.status === 'complete') {
+        console.log('SignUp is complete, setting session...');
+        if (signUp.createdSessionId) {
+          await setActive!({ session: signUp.createdSessionId });
+
+          setTimeout(() => {
+            router.replace('/(root)/(tabs)/home');
+          }, 100);
+          return;
+        }
+      }
+
+      // If we get here, something went wrong
+      console.log('OAuth flow incomplete, no session created');
+    } catch (err: any) {
+      console.error('OAuth Error:', err);
+      console.error('OAuth Error Details:', JSON.stringify(err, null, 2));
     }
-  }, []);
+  }, [startOAuthFlow]);
 
   return (
     <View className="w-full">

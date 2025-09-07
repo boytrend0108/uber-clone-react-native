@@ -3,6 +3,7 @@ import GoogleTextInput from '@/components/google-text-input';
 import Map from '@/components/map';
 import RideCart from '@/components/ride-cart';
 import { useFetch } from '@/lib/fetch';
+import { handlePostSignout, logSessionDebug } from '@/lib/session';
 import { useLocationStore } from '@/store';
 import { useAuth, useUser } from '@clerk/clerk-expo';
 import { useFocusEffect } from '@react-navigation/native';
@@ -68,12 +69,31 @@ const Home = () => {
     }, [])
   );
 
-  const handleSignOut = () => {
-    signOut();
+  const handleSignOut = async () => {
+    try {
+      logSessionDebug('SIGN_OUT_START', { userId: user?.id });
+      console.log('Starting sign-out process...');
 
-    router.replace('/(auth)/sign-in');
+      // Sign out from Clerk
+      await signOut();
+
+      logSessionDebug('SIGN_OUT_SUCCESS', 'User signed out successfully');
+      console.log('Sign-out successful, redirecting to sign-in...');
+
+      // Clear any cached session data and perform cleanup
+      handlePostSignout();
+
+      // Add a small delay to ensure sign-out completes and state updates
+      setTimeout(() => {
+        router.replace('/(auth)/onboarding');
+      }, 200);
+    } catch (error) {
+      logSessionDebug('SIGN_OUT_ERROR', error);
+      console.error('Error signing out:', error);
+      // Force redirect even if there's an error
+      router.replace('/(auth)/onboarding');
+    }
   };
-
   const handleDestinationPress = (location: {
     longitude: number;
     latitude: number;
