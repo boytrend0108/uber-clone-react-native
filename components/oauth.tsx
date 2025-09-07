@@ -1,5 +1,7 @@
 import { icons } from '@/assets/constants';
-import { useOAuth } from '@clerk/clerk-expo';
+import { diagnoseOAuthIssue } from '@/lib/session';
+import { useSSO } from '@clerk/clerk-expo';
+import * as AuthSession from 'expo-auth-session';
 import { router } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import React, { useCallback, useEffect } from 'react';
@@ -18,7 +20,7 @@ export const useWarmUpBrowser = () => {
 WebBrowser.maybeCompleteAuthSession();
 
 const OAuth = () => {
-  const { startOAuthFlow } = useOAuth({ strategy: 'oauth_google' });
+  const { startSSOFlow } = useSSO();
 
   useWarmUpBrowser();
 
@@ -26,61 +28,160 @@ const OAuth = () => {
     try {
       console.log('Starting Google OAuth flow...');
 
-      const { createdSessionId, signIn, signUp, setActive } =
-        await startOAuthFlow();
+      // Create the redirect URL
+      const redirectUrl = AuthSession.makeRedirectUri({
+        scheme: 'uber-clone',
+        path: '/oauth',
+      });
+      console.log('OAuth redirect URL:', redirectUrl);
+
+      const { createdSessionId, signIn, signUp, setActive, authSessionResult } =
+        await startSSOFlow({
+          strategy: 'oauth_google',
+          redirectUrl,
+        });
 
       console.log('OAuth flow result:', {
-        hasCreatedSessionId: !!createdSessionId,
-        hasSignIn: !!signIn,
-        hasSignUp: !!signUp,
-        signInStatus: signIn?.status,
-        signUpStatus: signUp?.status,
+        createdSessionId,
+        signIn: signIn
+          ? {
+              status: signIn.status,
+              createdSessionId: signIn.createdSessionId,
+              firstFactorVerification: {
+                status: signIn.firstFactorVerification?.status,
+                strategy: signIn.firstFactorVerification?.strategy,
+              },
+            }
+          : null,
+        signUp: signUp
+          ? {
+              status: signUp.status,
+              createdSessionId: signUp.createdSessionId,
+            }
+          : null,
+        authSessionResult: authSessionResult
+          ? {
+              type: authSessionResult.type,
+            }
+          : null,
       });
 
-      if (createdSessionId) {
-        console.log('Got createdSessionId, setting active session...');
-        await setActive!({ session: createdSessionId });
-
-        // Add a small delay to ensure session is properly set
-        setTimeout(() => {
-          router.replace('/(root)/(tabs)/home');
-        }, 100);
+      // Check if user dismissed or cancelled the OAuth flow
+      if (authSessionResult?.type === 'dismiss') {
+        console.log('❌ User dismissed the OAuth popup');
+        console.log(
+          '💡 Try again: Make sure to complete the Google sign-in process'
+        );
         return;
       }
 
-      // Handle sign-in completion
-      if (signIn && signIn.status === 'complete') {
-        console.log('SignIn is complete, setting session...');
-        if (signIn.createdSessionId) {
-          await setActive!({ session: signIn.createdSessionId });
+      if (authSessionResult?.type === 'cancel') {
+        console.log('❌ User cancelled the OAuth flow');
+        return;
+      }
 
-          setTimeout(() => {
-            router.replace('/(root)/(tabs)/home');
-          }, 100);
-          return;
+      // Check for success type
+      if (authSessionResult?.type === 'success') {
+        console.log('✅ OAuth popup completed successfully');
+      }
+
+      // Priority 1: If we have a direct session, use it
+      if (createdSessionId) {
+        console.log('✅ Got createdSessionId, setting active session...');
+        await setActive!({ session: createdSessionId });
+        router.replace('/(root)/(tabs)/home');
+        return;
+      }
+
+      // Priority 2: Handle completed sign-in
+      if (signIn && signIn.status === 'complete' && signIn.createdSessionId) {
+        console.log('✅ SignIn is complete, setting session...');
+        await setActive!({ session: signIn.createdSessionId });
+        router.replace('/(root)/(tabs)/home');
+        return;
+      }
+
+      // Priority 3: Handle completed sign-up
+      if (signUp && signUp.status === 'complete' && signUp.createdSessionId) {
+        console.log('✅ SignUp is complete, setting session...');
+        await setActive!({ session: signUp.createdSessionId });
+        router.replace('/(root)/(tabs)/home');
+        return;
+      }
+
+      // Check for specific statuses that might need attention
+      if (signIn) {
+        console.log('🔍 SignIn status details:', {
+          status: signIn.status,
+          identifier: signIn.identifier,
+          supportedFirstFactors: signIn.supportedFirstFactors,
+          firstFactorVerification: signIn.firstFactorVerification,
+        });
+
+        if (signIn.firstFactorVerification?.status === 'verified') {
+          console.log(
+            '🔄 Sign-in verification completed, but no session created yet'
+          );
+          console.log('This usually indicates a Clerk configuration issue');
         }
       }
 
-      // Handle sign-up completion
-      if (signUp && signUp.status === 'complete') {
-        console.log('SignUp is complete, setting session...');
-        if (signUp.createdSessionId) {
-          await setActive!({ session: signUp.createdSessionId });
-
-          setTimeout(() => {
-            router.replace('/(root)/(tabs)/home');
-          }, 100);
-          return;
-        }
+      if (signUp) {
+        console.log('🔍 SignUp status details:', {
+          status: signUp.status,
+          emailAddress: signUp.emailAddress,
+          missingFields: signUp.missingFields,
+          requiredFields: signUp.requiredFields,
+        });
       }
 
-      // If we get here, something went wrong
-      console.log('OAuth flow incomplete, no session created');
+      // If we get here, the OAuth flow was not successful
+      console.log('⚠️ OAuth flow incomplete - no session created');
+
+      // Run diagnosis
+      const issueType = diagnoseOAuthIssue({
+        createdSessionId,
+        signIn,
+        signUp,
+        authSessionResult,
+      });
+
+      console.log('');
+      console.log('🔧 Troubleshooting steps:');
+      console.log('1. Make sure you complete the Google sign-in popup');
+      console.log('2. Check your internet connection');
+      console.log('3. Verify Clerk configuration in dashboard');
+      console.log('4. Check if Google OAuth is properly configured in Clerk');
+      console.log('');
     } catch (err: any) {
-      console.error('OAuth Error:', err);
-      console.error('OAuth Error Details:', JSON.stringify(err, null, 2));
+      console.error('❌ OAuth Error:', err);
+
+      // Check for specific error types
+      if (
+        err.message?.includes('dismissed') ||
+        err.message?.includes('cancelled')
+      ) {
+        console.log(
+          '💡 OAuth was dismissed or cancelled by user - this is normal if you closed the popup'
+        );
+      } else if (
+        err.message?.includes('network') ||
+        err.message?.includes('fetch')
+      ) {
+        console.log(
+          '💡 Network error during OAuth flow - check your internet connection'
+        );
+      } else {
+        console.error('💡 Unexpected OAuth error occurred');
+        console.error('Error details:', {
+          message: err.message,
+          code: err.code,
+          status: err.status,
+          name: err.name,
+        });
+      }
     }
-  }, [startOAuthFlow]);
+  }, [startSSOFlow]);
 
   return (
     <View className="w-full">

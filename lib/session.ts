@@ -38,3 +38,35 @@ export const validateSessionState = (isLoaded: boolean, isSignedIn: boolean, ses
   });
   return isValid;
 };
+
+// Helper function to diagnose OAuth issues
+export const diagnoseOAuthIssue = (authResult: any) => {
+  console.log('🔍 OAuth Diagnosis:');
+
+  if (authResult?.authSessionResult?.type === 'dismiss') {
+    console.log('❌ Issue: OAuth popup was dismissed');
+    console.log('💡 Solution: Make sure to complete the Google sign-in process');
+    console.log('   - Don\'t close the popup before signing in');
+    console.log('   - Select your Google account and grant permissions');
+    return 'dismissed';
+  }
+
+  if (!authResult?.createdSessionId &&
+    !authResult?.signIn?.createdSessionId &&
+    !authResult?.signUp?.createdSessionId) {
+    console.log('❌ Issue: No session was created');
+    console.log('💡 Possible causes:');
+    console.log('   - OAuth flow was interrupted');
+    console.log('   - Clerk configuration issues');
+    console.log('   - Network connectivity problems');
+    return 'no_session';
+  }
+
+  if (authResult?.signIn?.status === 'needs_identifier') {
+    console.log('❌ Issue: Sign-in needs identifier');
+    console.log('💡 This suggests OAuth didn\'t provide the user info properly');
+    return 'needs_identifier';
+  }
+
+  return 'unknown';
+};
