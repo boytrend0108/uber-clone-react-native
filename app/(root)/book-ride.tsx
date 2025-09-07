@@ -8,15 +8,7 @@ import Payment from '@/components/payment';
 import RideLayout from '@/components/ride-layout';
 import { formatTime } from '@/lib/utils';
 import { useDriverStore, useLocationStore } from '@/store';
-
-// Conditionally import StripeProvider to avoid crashes
-let StripeProvider: any = null;
-try {
-  const stripe = require('@stripe/stripe-react-native');
-  StripeProvider = stripe.StripeProvider;
-} catch (error) {
-  console.log('Stripe not available in this build:', error);
-}
+import { StripeProvider } from '@stripe/stripe-react-native';
 
 const BookRide = () => {
   const { user } = useUser();

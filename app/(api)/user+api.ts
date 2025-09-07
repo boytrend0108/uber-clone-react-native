@@ -1,6 +1,5 @@
 import { neon } from '@neondatabase/serverless';
 
-
 export async function POST(request: Request) {
   try {
     const sql = neon(`${process.env.DATABASE_URL}`);
@@ -8,7 +7,10 @@ export async function POST(request: Request) {
     const { name, email, clerkId } = await request.json();
 
     if (!name || !email || !clerkId) {
-      return Response.json({ error: 'Missing required fields' }, { status: 400 });
+      return Response.json(
+        { error: 'Missing required fields' },
+        { status: 400 }
+      );
     }
 
     const response = await sql`
@@ -17,9 +19,7 @@ export async function POST(request: Request) {
     `;
 
     return Response.json({ data: response }, { status: 201 });
-
-  } catch (err) {
-    console.log(err);
-    return Response.json({ error: err }, { status: 500 });
+  } catch {
+    return Response.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

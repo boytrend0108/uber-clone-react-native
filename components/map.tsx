@@ -20,7 +20,7 @@ const Map = () => {
     destinationLongitude,
   } = useLocationStore();
 
-  const { selectedDriver, setSelectedDriver, setDrivers } = useDriverStore();
+  const { selectedDriver, setDrivers } = useDriverStore();
   const [markers, setMarkers] = useState<MarkerData[]>([]);
 
   useEffect(() => {
@@ -33,9 +33,7 @@ const Map = () => {
         userLongitude,
       });
 
-      // If we have destination coordinates, calculate times and prices
       if (destinationLatitude && destinationLongitude) {
-        console.log('Calculating driver times and prices...');
         const driversWithTimes = await calculateDriverTimes({
           markers: newMarkers,
           userLatitude,
@@ -58,7 +56,13 @@ const Map = () => {
     };
 
     initializeDrivers();
-  }, [userLatitude, userLongitude, destinationLatitude, destinationLongitude]);
+  }, [
+    userLatitude,
+    userLongitude,
+    destinationLatitude,
+    destinationLongitude,
+    setDrivers,
+  ]);
 
   const region = calculateRegion({
     userLatitude,

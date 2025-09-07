@@ -66,7 +66,7 @@ const SignUp = () => {
 
         setVerificationStatus('verified');
       } else {
-        console.error(JSON.stringify(signUpAttempt, null, 2));
+        // Handle incomplete signup
       }
     } catch (err: any) {
       setError(err.errors[0]?.longMessage || 'An error occurred');
@@ -110,7 +110,6 @@ const SignUp = () => {
             value={form.password}
             secureTextEntry
             onChangeText={(text) => setForm({ ...form, password: text })}
-            secureTextEntry
           />
 
           <CustomButton

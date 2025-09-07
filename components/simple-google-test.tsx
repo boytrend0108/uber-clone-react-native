@@ -5,9 +5,6 @@ import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplet
 const googlePlacesApiKey = process.env.EXPO_PUBLIC_GOOGLE_API_KEY;
 
 const SimpleGoogleTextInput = () => {
-  console.log('=== Simple Google Test Component ===');
-  console.log('API Key:', googlePlacesApiKey);
-
   return (
     <View style={{ flex: 1, padding: 20 }}>
       <Text style={{ fontSize: 18, marginBottom: 10 }}>
@@ -16,17 +13,16 @@ const SimpleGoogleTextInput = () => {
       <GooglePlacesAutocomplete
         placeholder="Type a place..."
         onPress={(data, details = null) => {
-          console.log('✅ Selected place:', data);
-          console.log('✅ Details:', details);
+          // Handle place selection
         }}
         onFail={(error) => {
-          console.error('❌ Google Places API Error:', error);
+          // Handle error
         }}
         onNotFound={() => {
-          console.log('❌ No results found for this search');
+          // Handle no results
         }}
         onTimeout={() => {
-          console.log('❌ Google Places API request timed out');
+          // Handle timeout
         }}
         query={{
           key: googlePlacesApiKey,
@@ -63,14 +59,9 @@ const SimpleGoogleTextInput = () => {
           },
         }}
         textInputProps={{
-          onFocus: () => console.log('🎯 Input focused'),
-          onBlur: () => console.log('🎯 Input blurred'),
-          onChangeText: (text) => {
-            console.log('🎯 Text changed:', text);
-            if (text.length > 0) {
-              console.log('🎯 Should trigger API call for:', text);
-            }
-          },
+          onFocus: () => {},
+          onBlur: () => {},
+          onChangeText: (text) => {},
         }}
         listViewDisplayed={'auto'}
         keyboardShouldPersistTaps={'handled'}

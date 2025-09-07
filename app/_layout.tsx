@@ -28,7 +28,6 @@ export default function RootLayout() {
   }, [loaded]);
 
   if (!loaded) {
-    // Async font loading only occurs in development.
     return null;
   }
 
@@ -44,8 +43,8 @@ export default function RootLayout() {
     <ClerkProvider tokenCache={tokenCache} publishableKey={publishableKey}>
       <Stack
         screenOptions={{
-          animation: 'slide_from_right', // Default slide animation
-          gestureEnabled: true, // Enable swipe back
+          animation: 'slide_from_right',
+          gestureEnabled: true,
           gestureDirection: 'horizontal',
         }}
       >

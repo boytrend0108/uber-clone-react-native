@@ -6,8 +6,6 @@ import { GoogleInputProps } from '@/types/type';
 
 const googlePlacesApiKey = process.env.EXPO_PUBLIC_GOOGLE_PLACE_API_KEY;
 
-console.log('Google Places API Key:', googlePlacesApiKey);
-
 const GoogleTextInput = ({
   icon,
   initialLocation,
@@ -15,8 +13,6 @@ const GoogleTextInput = ({
   textInputBackgroundColor,
   handlePress,
 }: GoogleInputProps) => {
-  console.log('GoogleTextInput component rendered');
-
   return (
     <View
       className={`flex flex-row items-center justify-center relative z-50 rounded-xl ${containerStyle}`}
@@ -58,18 +54,13 @@ const GoogleTextInput = ({
         listViewDisplayed={'auto'}
         timeout={20000}
         onFail={(error) => {
-          console.error('❌ Google Places Error:', error);
-          console.error('❌ Error details:', JSON.stringify(error, null, 2));
+          // Handle Google Places API error
         }}
         onNotFound={() => {
-          console.log('🔍 No results found');
-          console.log(
-            '🔍 This means API call was made but returned no results'
-          );
+          // Handle no results found
         }}
         onTimeout={() => {
-          console.log('⏰ Google Places API timeout');
-          console.log('⏰ This means API call was made but timed out');
+          // Handle API timeout
         }}
         styles={{
           textInputContainer: {

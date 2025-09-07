@@ -4,7 +4,7 @@ import { PaymentProps } from '@/types/type';
 import { useStripe } from '@stripe/stripe-react-native';
 import * as Linking from 'expo-linking';
 import { router } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Alert, Image, Text, View } from 'react-native';
 import ReactNativeModal from 'react-native-modal';
 import { Screen } from 'react-native-screens';
@@ -51,22 +51,11 @@ const Payment = ({
     };
   };
 
-  const initializePaymentSheet = async () => {
-    console.log('start initializing payment sheet');
-    console.log('Payment props:', { amount, email, fullName });
-
-    // Clean and validate the fullName
+  const initializePaymentSheet = useCallback(async () => {
     const cleanName = fullName?.trim() || 'Guest User';
     const cleanEmail = email?.trim();
     const cleanAmount = amount?.toString().trim();
 
-    console.log('Cleaned values:', {
-      amount: cleanAmount,
-      email: cleanEmail,
-      name: cleanName,
-    });
-
-    // Validate props before proceeding
     if (
       !cleanAmount ||
       cleanAmount === '0' ||
@@ -92,8 +81,6 @@ const Payment = ({
         customerId: customer,
         customerEphemeralKeySecret: ephemeralKey,
         paymentIntentClientSecret: paymentIntent,
-        // Set `allowsDelayedPaymentMethods` to true if your business can handle payment
-        //methods that complete payment after a delay, like SEPA Debit and Sofort.
         allowsDelayedPaymentMethods: true,
         defaultBillingDetails: {
           name: fullName,
@@ -108,26 +95,24 @@ const Payment = ({
       if (!error) {
         setLoading(true);
       }
-    } catch (error) {
-      console.log('fetchPaymentSheetParams or initpayment error', error);
+    } catch {
+      // Handle payment initialization error
     }
-  };
+  }, [fullName, email, amount, initPaymentSheet]);
 
   const openPaymentSheet = async () => {
-    console.log('press Checkout');
     const { error } = await presentPaymentSheet();
 
     if (error) {
       Alert.alert(`Error code: ${error.code}`, error.message);
     } else {
-      // Alert.alert('Success', 'Your order is confirmed!');
       setSuccess(true);
     }
   };
 
   useEffect(() => {
     initializePaymentSheet();
-  }, []);
+  }, [initializePaymentSheet]);
 
   return (
     <Screen>

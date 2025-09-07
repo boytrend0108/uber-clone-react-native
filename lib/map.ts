@@ -1,27 +1,28 @@
-import { Driver, MarkerData } from "@/types/type";
+import { Driver, MarkerData } from '@/types/type';
 
 const directionsAPI = process.env.EXPO_PUBLIC_DIRECTIONS_API_KEY;
 
-console.log('>>>>>>', directionsAPI);
-
-// Helper function to safely extract duration from Google Directions API response
-const extractDurationFromResponse = (data: any, requestType: string): number | null => {
+const extractDurationFromResponse = (
+  data: any,
+  requestType: string
+): number | null => {
   try {
-    // Check for API errors
     if (data.status && data.status !== 'OK') {
-      console.warn(`Google Directions API error (${requestType}):`, data.status, data.error_message);
       return null;
     }
 
-    // Check if the response has the expected structure
-    if (!data.routes || !data.routes[0] || !data.routes[0].legs || !data.routes[0].legs[0] || !data.routes[0].legs[0].duration) {
-      console.warn(`Invalid response structure from Google Directions API (${requestType}):`, data);
+    if (
+      !data.routes ||
+      !data.routes[0] ||
+      !data.routes[0].legs ||
+      !data.routes[0].legs[0] ||
+      !data.routes[0].legs[0].duration
+    ) {
       return null;
     }
 
-    return data.routes[0].legs[0].duration.value; // Time in seconds
-  } catch (error) {
-    console.error(`Error extracting duration from API response (${requestType}):`, error);
+    return data.routes[0].legs[0].duration.value;
+  } catch {
     return null;
   }
 };
@@ -118,19 +119,17 @@ export const calculateDriverTimes = async ({
     return;
 
   if (!directionsAPI) {
-    console.error("Google Directions API key is not configured");
-    return markers.map(marker => ({ ...marker, time: 0, price: '0.00' }));
+    return markers.map((marker) => ({ ...marker, time: 0, price: '0.00' }));
   }
 
   try {
     const timesPromises = markers.map(async (marker) => {
       try {
         const responseToUser = await fetch(
-          `https://maps.googleapis.com/maps/api/directions/json?origin=${marker.latitude},${marker.longitude}&destination=${userLatitude},${userLongitude}&key=${directionsAPI}`,
+          `https://maps.googleapis.com/maps/api/directions/json?origin=${marker.latitude},${marker.longitude}&destination=${userLatitude},${userLongitude}&key=${directionsAPI}`
         );
 
         if (!responseToUser.ok) {
-          console.warn(`Failed to fetch directions (toUser): ${responseToUser.status}`);
           return { ...marker, time: 0, price: '0.00' };
         }
 
@@ -141,37 +140,35 @@ export const calculateDriverTimes = async ({
           return { ...marker, time: 0, price: '0.00' };
         }
 
-        // Fetch directions from user to destination
         const responseToDestination = await fetch(
-          `https://maps.googleapis.com/maps/api/directions/json?origin=${userLatitude},${userLongitude}&destination=${destinationLatitude},${destinationLongitude}&key=${directionsAPI}`,
+          `https://maps.googleapis.com/maps/api/directions/json?origin=${userLatitude},${userLongitude}&destination=${destinationLatitude},${destinationLongitude}&key=${directionsAPI}`
         );
 
         if (!responseToDestination.ok) {
-          console.warn(`Failed to fetch directions (toDestination): ${responseToDestination.status}`);
           return { ...marker, time: 0, price: '0.00' };
         }
 
         const dataToDestination = await responseToDestination.json();
-        const timeToDestination = extractDurationFromResponse(dataToDestination, 'toDestination');
+        const timeToDestination = extractDurationFromResponse(
+          dataToDestination,
+          'toDestination'
+        );
 
         if (timeToDestination === null) {
           return { ...marker, time: 0, price: '0.00' };
         }
 
-        const totalTime = (timeToUser + timeToDestination) / 60; // Total time in minutes
-        const price = (totalTime * 0.5).toFixed(2); // Calculate price based on time
+        const totalTime = (timeToUser + timeToDestination) / 60;
+        const price = (totalTime * 0.5).toFixed(2);
 
         return { ...marker, time: Math.round(totalTime), price };
-      } catch (markerError) {
-        console.error(`Error calculating time for marker ${marker.id}:`, markerError);
+      } catch {
         return { ...marker, time: 0, price: '0.00' };
       }
     });
 
     return await Promise.all(timesPromises);
-  } catch (error) {
-    console.error("Error calculating driver times:", error);
-    // Return the original markers with default time and price values
-    return markers.map(marker => ({ ...marker, time: 0, price: '0.00' }));
+  } catch {
+    return markers.map((marker) => ({ ...marker, time: 0, price: '0.00' }));
   }
 };

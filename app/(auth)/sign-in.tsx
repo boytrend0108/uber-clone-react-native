@@ -18,10 +18,8 @@ const SignIn = () => {
   const { isSignedIn } = useAuth();
   const router = useRouter();
 
-  // If user is already signed in, redirect to home
   useEffect(() => {
     if (isSignedIn) {
-      console.log('User already signed in, redirecting to home...');
       router.replace('/(root)/(tabs)/home');
     }
   }, [isSignedIn, router]);
@@ -29,13 +27,11 @@ const SignIn = () => {
   const onSignInPress = React.useCallback(async () => {
     if (!isLoaded) {
       logSessionDebug('SIGN_IN_ATTEMPT', 'Clerk not loaded yet');
-      console.log('Clerk not loaded yet, please wait...');
       return;
     }
 
     try {
       logSessionDebug('SIGN_IN_START', { email: form.email });
-      console.log('Starting sign-in process...');
 
       const signInAttempt = await signIn.create({
         identifier: form.email,
@@ -48,56 +44,32 @@ const SignIn = () => {
         hasSession: !!signInAttempt.createdSessionId,
       });
 
-      console.log('Sign-in attempt result:', {
-        status: signInAttempt.status,
-        createdSessionId: signInAttempt.createdSessionId,
-      });
-
       if (signInAttempt.status === 'complete') {
-        // Try to set the session - handle both cases where createdSessionId exists or not
         try {
           if (signInAttempt.createdSessionId) {
             logSessionDebug('SET_ACTIVE_SESSION', {
               sessionId: signInAttempt.createdSessionId,
             });
-            console.log(
-              'Setting active session with ID:',
-              signInAttempt.createdSessionId
-            );
             await setActive({ session: signInAttempt.createdSessionId });
           } else {
             logSessionDebug(
               'NO_SESSION_ID_FALLBACK',
               'Attempting to set active session without explicit ID'
             );
-            console.log(
-              'No createdSessionId, attempting to set active session with the attempt object...'
-            );
-            // Sometimes Clerk doesn't return a sessionId but the session is still valid
             await setActive({ session: signInAttempt.createdSessionId });
           }
 
           logSessionDebug('SESSION_SET_SUCCESS', 'Redirecting to home');
-          console.log('Session set successfully, redirecting to home...');
           router.replace('/(root)/(tabs)/home');
         } catch (sessionError) {
           logSessionDebug('SESSION_SET_ERROR', sessionError);
-          console.error('Error setting active session:', sessionError);
-
-          // If setting session fails, try to redirect anyway and let the app handle it
-          console.log('Session set failed, but attempting redirect...');
           router.replace('/(root)/(tabs)/home');
         }
       } else {
         logSessionDebug('SIGN_IN_INCOMPLETE', signInAttempt);
-        console.error(
-          'Sign-in not complete:',
-          JSON.stringify(signInAttempt, null, 2)
-        );
       }
     } catch (err) {
       logSessionDebug('SIGN_IN_ERROR', err);
-      console.error('Sign-in error:', JSON.stringify(err, null, 2));
     }
   }, [isLoaded, form.email, form.password, signIn, setActive, router]);
 

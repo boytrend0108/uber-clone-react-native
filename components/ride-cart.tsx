@@ -21,7 +21,6 @@ const RideCart = ({
 }: {
   ride: Ride;
 }) => {
-  // Convert coordinates to numbers (handle both string and number types)
   const originLat =
     typeof origin_latitude === 'string'
       ? parseFloat(origin_latitude)
@@ -39,7 +38,6 @@ const RideCart = ({
       ? parseFloat(destination_longitude)
       : destination_longitude;
 
-  // Check if coordinates are valid
   const hasValidCoordinates =
     !isNaN(originLat) &&
     !isNaN(originLng) &&
@@ -59,8 +57,8 @@ const RideCart = ({
               <Image
                 source={{ uri: mapUrl }}
                 className="w-[80px] h-[90px] rounded-lg border border-gray-300"
-                onError={(error) => console.log('Image load error:', error)}
-                onLoad={() => console.log('Image loaded successfully')}
+                onError={(error) => {}}
+                onLoad={() => {}}
               />
             ) : (
               <View className="w-[80px] h-[90px] rounded-lg border border-gray-300 bg-gray-100 flex justify-center items-center">
